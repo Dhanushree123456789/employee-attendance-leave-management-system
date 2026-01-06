@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Leave Requests{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-user-shield"></i></div>
+            <h2>Admin Portal</h2>
+            <p>{{ session.full_name }}</p>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
+            <a href="{{ url_for('view_employees') }}"><i class="fas fa-users"></i><span>Employees</span></a>
+            <a href="{{ url_for('view_attendance') }}"><i class="fas fa-calendar-check"></i><span>View Attendance</span></a>
+            <a href="{{ url_for('manage_leaves') }}" class="active"><i class="fas fa-tasks"></i><span>Manage Leaves</span></a>
+            <a href="{{ url_for('attendance_report') }}"><i class="fas fa-chart-bar"></i><span>Attendance Report</span></a>
+            <a href="{{ url_for('leave_report') }}"><i class="fas fa-file-alt"></i><span>Leave Report</span></a>
+            <a href="{{ url_for('logout') }}" onclick="return confirmLogout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+        </nav>
+    </aside>
+    
+    <main class="main-content">
+        <div class="top-nav">
+            <h1>Manage Leave Requests</h1>
+            <div class="user-info">
+                <div class="user-avatar">{{ session.full_name[0].upper() }}</div>
+                <div class="user-details">
+                    <span class="name">{{ session.full_name }}</span>
+                    <span class="role">{{ session.role_name }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} fade-in">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Leave Requests</h3>
+                    <select id="status-filter" class="form-control" onchange="filterByStatus()" style="width: 200px;">
+                        <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
+                        <option value="Approved" {% if status_filter == 'Approved' %}selected{% endif %}>Approved</option>
+                        <option value="Rejected" {% if status_filter == 'Rejected' %}selected{% endif %}>Rejected</option>
+                    </select>
+                </div>
+                <div class="card-body">
+                    {% if leave_requests %}
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Employee</th>
+                                        <th>Leave Type</th>
+                                        <th>Duration</th>
+                                        <th>Days</th>
+                                        <th>Applied On</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for leave in leave_requests %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            <strong>{{ leave.full_name }}</strong><br>
+                                            <small style="color: var(--text-light);">{{ leave.email }}</small>
+                                        </td>
+                                        <td><span style="font-weight: 600;">{{ leave.leave_type }}</span></td>
+                                        <td>{{ leave.start_date }} to {{ leave.end_date }}</td>
+                                        <td>{{ leave.days }} day(s)</td>
+                                        <td>{{ leave.applied_at[:10] }}</td>
+                                        <td>
+                                            {% if leave.status == 'Pending' %}
+                                                <span class="badge badge-warning"><i class="fas fa-hourglass-half"></i> Pending</span>
+                                            {% elif leave.status == 'Approved' %}
+                                                <span class="badge badge-success"><i class="fas fa-check-circle"></i> Approved</span>
+                                            {% else %}
+                                                <span class="badge badge-danger"><i class="fas fa-times-circle"></i> Rejected</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if leave.status == 'Pending' %}
+                                                <button onclick="processLeaveRequest({{ leave.leave_id }}, 'Approved')" class="btn btn-success btn-sm">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </button>
+                                                <button onclick="processLeaveRequest({{ leave.leave_id }}, 'Rejected')" class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-times"></i> Reject
+                                                </button>
+                                            {% else %}
+                                                <small style="color: var(--text-light);">
+                                                    By: {{ leave.reviewer_name }}<br>
+                                                    {{ leave.reviewed_at[:10] if leave.reviewed_at else '' }}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr style="background-color: var(--light-bg);">
+                                        <td colspan="8">
+                                            <strong>Reason:</strong> {{ leave.reason }}
+                                            {% if leave.admin_remarks %}
+                                            <br><strong>Admin Remarks:</strong> {{ leave.admin_remarks }}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <h3>No {{ status_filter }} Requests</h3>
+                            <p>No {{ status_filter.lower() }} leave requests found</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}Leave Status{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <h2>Employee Portal</h2>
+            <p>{{ session.full_name }}</p>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('employee_dashboard') }}">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('attendance_history') }}">
+                <i class="fas fa-calendar-check"></i>
+                <span>Attendance History</span>
+            </a>
+            <a href="{{ url_for('apply_leave') }}">
+                <i class="fas fa-file-alt"></i>
+                <span>Apply for Leave</span>
+            </a>
+            <a href="{{ url_for('leave_status') }}" class="active">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Leave Status</span>
+            </a>
+            <a href="{{ url_for('logout') }}" onclick="return confirmLogout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <h1>Leave Status</h1>
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ session.full_name[0].upper() }}
+                </div>
+                <div class="user-details">
+                    <span class="name">{{ session.full_name }}</span>
+                    <span class="role">{{ session.role_name }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <div class="card">
+                <div class="card-header">
+                    <h3>My Leave Applications</h3>
+                    <a href="{{ url_for('apply_leave') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> New Application
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if leave_requests %}
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Leave Type</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Days</th>
+                                        <th>Applied On</th>
+                                        <th>Status</th>
+                                        <th>Reviewed By</th>
+                                        <th>Admin Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for leave in leave_requests %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            <span style="font-weight: 600;">{{ leave.leave_type }}</span>
+                                        </td>
+                                        <td>{{ leave.start_date }}</td>
+                                        <td>{{ leave.end_date }}</td>
+                                        <td>{{ leave.days }} day(s)</td>
+                                        <td>{{ leave.applied_at[:10] }}</td>
+                                        <td>
+                                            {% if leave.status == 'Pending' %}
+                                                <span class="badge badge-warning">
+                                                    <i class="fas fa-hourglass-half"></i> Pending
+                                                </span>
+                                            {% elif leave.status == 'Approved' %}
+                                                <span class="badge badge-success">
+                                                    <i class="fas fa-check-circle"></i> Approved
+                                                </span>
+                                            {% else %}
+                                                <span class="badge badge-danger">
+                                                    <i class="fas fa-times-circle"></i> Rejected
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ leave.reviewer_name or '-' }}</td>
+                                        <td>{{ leave.admin_remarks or '-' }}</td>
+                                    </tr>
+                                    <tr style="background-color: var(--light-bg);">
+                                        <td colspan="9">
+                                            <strong>Reason:</strong> {{ leave.reason }}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <h3>No Leave Applications</h3>
+                            <p>You haven't submitted any leave applications yet</p>
+                            <a href="{{ url_for('apply_leave') }}" class="btn btn-primary" style="margin-top: 1rem;">
+                                <i class="fas fa-plus"></i> Apply for Leave
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

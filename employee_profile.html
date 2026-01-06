@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <h2>Employee Portal</h2>
+            <p>{{ session.full_name }}</p>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('employee_dashboard') }}">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('attendance_history') }}">
+                <i class="fas fa-calendar-check"></i>
+                <span>Attendance History</span>
+            </a>
+            <a href="{{ url_for('apply_leave') }}">
+                <i class="fas fa-file-alt"></i>
+                <span>Apply for Leave</span>
+            </a>
+            <a href="{{ url_for('leave_status') }}">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Leave Status</span>
+            </a>
+            <a href="{{ url_for('employee_profile') }}" class="active">
+                <i class="fas fa-user-edit"></i>
+                <span>My Profile</span>
+            </a>
+            <a href="{{ url_for('change_password') }}">
+                <i class="fas fa-key"></i>
+                <span>Change Password</span>
+            </a>
+            <a href="{{ url_for('logout') }}" onclick="return confirmLogout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <h1>My Profile</h1>
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ session.full_name[0].upper() }}
+                </div>
+                <div class="user-details">
+                    <span class="name">{{ session.full_name }}</span>
+                    <span class="role">{{ session.role_name }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} fade-in">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Profile Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Profile Information</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('employee_profile') }}">
+                        <div class="form-group">
+                            <label for="full_name">Full Name</label>
+                            <input type="text" id="full_name" name="full_name" class="form-control" value="{{ employee.full_name }}" readonly>
+                            <small style="color: var(--text-light);">Name cannot be changed. Contact admin if needed.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" class="form-control" value="{{ employee.username }}" readonly>
+                            <small style="color: var(--text-light);">Username cannot be changed. Contact admin if needed.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" class="form-control" value="{{ employee.email }}" readonly>
+                            <small style="color: var(--text-light);">Email cannot be changed. Contact admin if needed.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" class="form-control" value="{{ employee.phone or '' }}" placeholder="Enter your phone number">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="qualification">Qualification</label>
+                            <input type="text" id="qualification" name="qualification" class="form-control" value="{{ employee.qualification or '' }}" placeholder="Enter your qualification">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="experience">Experience (years)</label>
+                            <input type="number" id="experience" name="experience" class="form-control" value="{{ employee.experience or '' }}" min="0" placeholder="Enter years of experience">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="job_role">Job Role</label>
+                            <input type="text" id="job_role" name="job_role" class="form-control" value="{{ employee.job_role or '' }}" placeholder="Enter your job role">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="date_joined">Joining Date</label>
+                            <input type="text" id="date_joined" name="date_joined" class="form-control" value="{{ employee.date_joined }}" readonly>
+                            <small style="color: var(--text-light);">Joining date is set by admin and cannot be changed.</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="days_worked">Days Worked</label>
+                            <input type="text" id="days_worked" name="days_worked" class="form-control" value="{{ employee.days_worked }} days" readonly>
+                            <small style="color: var(--text-light);">Total present days calculated automatically.</small>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+function confirmLogout() {
+    return confirm('Are you sure you want to logout?');
+}
+</script>
+{% endblock %}

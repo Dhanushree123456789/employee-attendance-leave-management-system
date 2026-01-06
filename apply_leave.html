@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Apply for Leave{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <h2>Employee Portal</h2>
+            <p>{{ session.full_name }}</p>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('employee_dashboard') }}">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('attendance_history') }}">
+                <i class="fas fa-calendar-check"></i>
+                <span>Attendance History</span>
+            </a>
+            <a href="{{ url_for('apply_leave') }}" class="active">
+                <i class="fas fa-file-alt"></i>
+                <span>Apply for Leave</span>
+            </a>
+            <a href="{{ url_for('leave_status') }}">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Leave Status</span>
+            </a>
+            <a href="{{ url_for('logout') }}" onclick="return confirmLogout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <h1>Apply for Leave</h1>
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ session.full_name[0].upper() }}
+                </div>
+                <div class="user-details">
+                    <span class="name">{{ session.full_name }}</span>
+                    <span class="role">{{ session.role_name }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} fade-in">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3>Leave Application Form</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('apply_leave') }}" id="leave-form">
+                        <div class="form-group">
+                            <label for="leave_type">
+                                <i class="fas fa-list"></i> Leave Type *
+                            </label>
+                            <select id="leave_type" name="leave_type" class="form-control" required>
+                                <option value="">-- Select Leave Type --</option>
+                                <option value="Sick">Sick Leave</option>
+                                <option value="Casual">Casual Leave</option>
+                                <option value="Annual">Annual Leave</option>
+                            </select>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                            <div class="form-group">
+                                <label for="start_date">
+                                    <i class="fas fa-calendar-alt"></i> Start Date *
+                                </label>
+                                <input 
+                                    type="date" 
+                                    id="start_date" 
+                                    name="start_date" 
+                                    class="form-control"
+                                    onchange="updateLeaveDays()"
+                                    required
+                                >
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="end_date">
+                                    <i class="fas fa-calendar-alt"></i> End Date *
+                                </label>
+                                <input 
+                                    type="date" 
+                                    id="end_date" 
+                                    name="end_date" 
+                                    class="form-control"
+                                    onchange="updateLeaveDays()"
+                                    required
+                                >
+                            </div>
+                        </div>
+                        
+                        <div id="leave-days" style="display: none; padding: 0.75rem; background-color: var(--light-bg); border-radius: 8px; margin-bottom: 1.5rem; font-weight: 600; color: var(--primary-color);">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="reason">
+                                <i class="fas fa-comment"></i> Reason for Leave *
+                            </label>
+                            <textarea 
+                                id="reason" 
+                                name="reason" 
+                                class="form-control" 
+                                rows="4"
+                                placeholder="Please provide a detailed reason for your leave application..."
+                                required
+                            ></textarea>
+                            <small style="color: var(--text-light); font-size: 0.875rem;">
+                                Minimum 10 characters required
+                            </small>
+                        </div>
+                        
+                        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Submit Application
+                            </button>
+                            <a href="{{ url_for('leave_status') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Leave Policy Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Leave Policy Guidelines</h3>
+                </div>
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                        <div style="padding: 1rem; border-left: 4px solid var(--success-color); background-color: var(--light-bg); border-radius: 8px;">
+                            <h4 style="color: var(--success-color); margin-bottom: 0.5rem;">
+                                <i class="fas fa-briefcase-medical"></i> Sick Leave
+                            </h4>
+                            <p style="color: var(--text-light); font-size: 0.95rem;">
+                                For medical reasons and health issues. Medical certificate may be required for leaves exceeding 3 days.
+                            </p>
+                        </div>
+                        
+                        <div style="padding: 1rem; border-left: 4px solid var(--info-color); background-color: var(--light-bg); border-radius: 8px;">
+                            <h4 style="color: var(--info-color); margin-bottom: 0.5rem;">
+                                <i class="fas fa-umbrella-beach"></i> Casual Leave
+                            </h4>
+                            <p style="color: var(--text-light); font-size: 0.95rem;">
+                                For personal reasons and short-term absences. Advance notice recommended.
+                            </p>
+                        </div>
+                        
+                        <div style="padding: 1rem; border-left: 4px solid var(--warning-color); background-color: var(--light-bg); border-radius: 8px;">
+                            <h4 style="color: var(--warning-color); margin-bottom: 0.5rem;">
+                                <i class="fas fa-plane-departure"></i> Annual Leave
+                            </h4>
+                            <p style="color: var(--text-light); font-size: 0.95rem;">
+                                Planned vacation and extended time off. Must be approved in advance by management.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

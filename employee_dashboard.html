@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Dashboard{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <h2>Employee Portal</h2>
+            <p>{{ session.full_name }}</p>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('employee_dashboard') }}" class="active">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('attendance_history') }}">
+                <i class="fas fa-calendar-check"></i>
+                <span>Attendance History</span>
+            </a>
+            <a href="{{ url_for('apply_leave') }}">
+                <i class="fas fa-file-alt"></i>
+                <span>Apply for Leave</span>
+            </a>
+            <a href="{{ url_for('leave_status') }}">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Leave Status</span>
+            </a>
+            <a href="{{ url_for('employee_profile') }}">
+                <i class="fas fa-user-edit"></i>
+                <span>My Profile</span>
+            </a>
+            <a href="{{ url_for('change_password') }}">
+                <i class="fas fa-key"></i>
+                <span>Change Password</span>
+            </a>
+            <a href="{{ url_for('logout') }}" onclick="return confirmLogout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <h1>Dashboard</h1>
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ session.full_name[0].upper() }}
+                </div>
+                <div class="user-details">
+                    <span class="name">{{ session.full_name }}</span>
+                    <span class="role">{{ session.role_name }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} fade-in">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Quick Actions - Today's Attendance</h3>
+                </div>
+                <div class="card-body">
+                    {% if today_attendance %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            <div>
+                                <strong>Attendance Marked!</strong>
+                                <p>You marked yourself as <strong>{{ today_attendance.status }}</strong> today at {{ today_attendance.marked_at }}</p>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p style="margin-bottom: 1rem; color: var(--text-light);">
+                            <i class="fas fa-info-circle"></i> You haven't marked your attendance for today yet.
+                        </p>
+                        <div style="display: flex; gap: 1rem;">
+                            <button onclick="markAttendance('Present')" class="btn btn-success">
+                                <i class="fas fa-check"></i> Mark Present
+                            </button>
+                            <button onclick="markAttendance('Absent')" class="btn btn-danger">
+                                <i class="fas fa-times"></i> Mark Absent
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Break Management -->
+            {% if today_attendance %}
+            <div class="card">
+                <div class="card-header">
+                    <h3>Break Management</h3>
+                </div>
+                <div class="card-body">
+                    {% if currently_on_break %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-coffee"></i>
+                            <div>
+                                <strong>On Break!</strong>
+                                <p>You are currently on break. Click "End Break" when you're back.</p>
+                            </div>
+                        </div>
+                        <button onclick="breakOut()" class="btn btn-danger">
+                            <i class="fas fa-stop"></i> End Break
+                        </button>
+                    {% else %}
+                        <p style="margin-bottom: 1rem; color: var(--text-light);">
+                            <i class="fas fa-coffee"></i> Ready to take a break? Click "Start Break" below.
+                        </p>
+                        <button onclick="breakIn()" class="btn btn-warning">
+                            <i class="fas fa-play"></i> Start Break
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Today's Break Times -->
+            {% if today_breaks %}
+            <div class="card">
+                <div class="card-header">
+                    <h3>Today's Break Times</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Break Start</th>
+                                    <th>Break End</th>
+                                    <th>Duration (minutes)</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for break_record in today_breaks %}
+                                <tr>
+                                    <td>{{ break_record.break_in_time[:19] if break_record.break_in_time else '-' }}</td>
+                                    <td>{{ break_record.break_out_time[:19] if break_record.break_out_time else '-' }}</td>
+                                    <td>{{ break_record.break_duration if break_record.break_duration else '-' }}</td>
+                                    <td>
+                                        {% if break_record.break_out_time %}
+                                            <span class="badge badge-success">
+                                                <i class="fas fa-check"></i> Completed
+                                            </span>
+                                        {% else %}
+                                            <span class="badge badge-warning">
+                                                <i class="fas fa-clock"></i> Ongoing
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+
+
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card warning">
+                    <div class="stat-icon">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-label">Pending Leaves</div>
+                    <div class="stat-value">{{ pending_leaves }}</div>
+                </div>
+                
+                <div class="stat-card success">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-double"></i>
+                    </div>
+                    <div class="stat-label">Approved Leaves</div>
+                    <div class="stat-value">{{ approved_leaves }}</div>
+                </div>
+            </div>
+            
+            <!-- My Profile -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>My Profile</h3>
+                </div>
+                <div class="card-body">
+                    <div class="profile-grid">
+                        <div class="profile-item">
+                            <label>Full Name:</label>
+                            <span>{{ session.full_name }}</span>
+                        </div>
+                        <div class="profile-item">
+                            <label>Email:</label>
+                            <span>{{ session.email }}</span>
+                        </div>
+                        <div class="profile-item">
+                            <label>Phone:</label>
+                            <span>{{ employee_profile.phone or 'Not provided' }}</span>
+                        </div>
+                        <div class="profile-item">
+                            <label>Qualification:</label>
+                            <span>{{ employee_profile.qualification or 'Not provided' }}</span>
+                        </div>
+                        <div class="profile-item">
+                            <label>Experience:</label>
+                            <span>{{ employee_profile.experience or 'Not provided' }} {% if employee_profile.experience %}years{% endif %}</span>
+                        </div>
+                        <div class="profile-item">
+                            <label>Job Role:</label>
+                            <span>{{ employee_profile.job_role or 'Not provided' }}</span>
+                        </div>
+                        <div class="profile-item">
+                            <label>Joining Date:</label>
+                            <span>{{ employee_profile.date_joined }}</span>
+                        </div>
+                        <div class="profile-item">
+                            <label>Days Worked:</label>
+                            <span>{{ employee_profile.days_worked }} days</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Attendance -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Recent Attendance (Last 7 Days)</h3>
+                    <a href="{{ url_for('attendance_history') }}" class="btn btn-secondary btn-sm">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_attendance %}
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Marked At</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in recent_attendance %}
+                                    <tr>
+                                        <td>{{ record.attendance_date }}</td>
+                                        <td>
+                                            {% if record.status == 'Present' %}
+                                                <span class="badge badge-success">
+                                                    <i class="fas fa-check"></i> Present
+                                                </span>
+                                            {% else %}
+                                                <span class="badge badge-danger">
+                                                    <i class="fas fa-times"></i> Absent
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ record.marked_at }}</td>
+                                        <td>{{ record.remarks or '-' }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-times"></i>
+                            <h3>No Attendance Records</h3>
+                            <p>Start marking your daily attendance</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+// Break management functions
+function breakIn() {
+    if (confirm('Are you sure you want to start your break?')) {
+        fetch('/employee/break-in', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while starting break');
+        });
+    }
+}
+
+function breakOut() {
+    if (confirm('Are you sure you want to end your break?')) {
+        fetch('/employee/break-out', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while ending break');
+        });
+    }
+}
+
+// Existing attendance function
+function markAttendance(status) {
+    if (confirm(`Are you sure you want to mark yourself as ${status}?`)) {
+        fetch('/employee/mark-attendance', {
+            method: 'POST',
+            body: new URLSearchParams({
+                'status': status
+            }),
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while marking attendance');
+        });
+    }
+}
+
+function confirmLogout() {
+    return confirm('Are you sure you want to logout?');
+}
+</script>
+{% endblock %}

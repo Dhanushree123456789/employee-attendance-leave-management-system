@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Leave Report{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo"><i class="fas fa-user-shield"></i></div>
+            <h2>Admin Portal</h2>
+            <p>{{ session.full_name }}</p>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-th-large"></i><span>Dashboard</span></a>
+            <a href="{{ url_for('view_employees') }}"><i class="fas fa-users"></i><span>Employees</span></a>
+            <a href="{{ url_for('view_attendance') }}"><i class="fas fa-calendar-check"></i><span>View Attendance</span></a>
+            <a href="{{ url_for('manage_leaves') }}"><i class="fas fa-tasks"></i><span>Manage Leaves</span></a>
+            <a href="{{ url_for('attendance_report') }}"><i class="fas fa-chart-bar"></i><span>Attendance Report</span></a>
+            <a href="{{ url_for('leave_report') }}" class="active"><i class="fas fa-file-alt"></i><span>Leave Report</span></a>
+            <a href="{{ url_for('logout') }}" onclick="return confirmLogout()"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
+        </nav>
+    </aside>
+    
+    <main class="main-content">
+        <div class="top-nav">
+            <h1>Leave Report</h1>
+            <div class="user-info">
+                <div class="user-avatar">{{ session.full_name[0].upper() }}</div>
+                <div class="user-details">
+                    <span class="name">{{ session.full_name }}</span>
+                    <span class="role">{{ session.role_name }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Leave Usage Summary</h3>
+                    <div class="d-flex gap-2">
+                        <select id="year-filter" class="form-control" onchange="filterByYear()" style="width: 150px;">
+                            <option value="2024" {% if selected_year == '2024' %}selected{% endif %}>2024</option>
+                            <option value="2023" {% if selected_year == '2023' %}selected{% endif %}>2023</option>
+                        </select>
+                        <button onclick="exportTableToCSV('leave_report_{{ selected_year }}.csv')" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <button onclick="printTable()" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if report_data %}
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Employee Name</th>
+                                        <th>Email</th>
+                                        <th>Sick Leaves</th>
+                                        <th>Casual Leaves</th>
+                                        <th>Annual Leaves</th>
+                                        <th>Total Approved</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for data in report_data %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td><strong>{{ data.full_name }}</strong></td>
+                                        <td>{{ data.email }}</td>
+                                        <td><span class="badge badge-danger">{{ data.sick_leaves }}</span></td>
+                                        <td><span class="badge badge-info">{{ data.casual_leaves }}</span></td>
+                                        <td><span class="badge badge-warning">{{ data.annual_leaves }}</span></td>
+                                        <td><strong>{{ data.total_approved }}</strong></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot style="background-color: var(--light-bg); font-weight: 600;">
+                                    <tr>
+                                        <td colspan="3">TOTAL</td>
+                                        <td>{{ report_data|sum(attribute='sick_leaves') }}</td>
+                                        <td>{{ report_data|sum(attribute='casual_leaves') }}</td>
+                                        <td>{{ report_data|sum(attribute='annual_leaves') }}</td>
+                                        <td>{{ report_data|sum(attribute='total_approved') }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-file-alt"></i>
+                            <h3>No Data Available</h3>
+                            <p>No leave data for {{ selected_year }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

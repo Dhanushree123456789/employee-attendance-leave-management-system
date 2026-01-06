@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}View Employees{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <h2>Admin Portal</h2>
+            <p>{{ session.full_name }}</p>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('view_employees') }}" class="active">
+                <i class="fas fa-users"></i>
+                <span>Employees</span>
+            </a>
+            <a href="{{ url_for('view_attendance') }}">
+                <i class="fas fa-calendar-check"></i>
+                <span>View Attendance</span>
+            </a>
+            <a href="{{ url_for('manage_leaves') }}">
+                <i class="fas fa-tasks"></i>
+                <span>Manage Leaves</span>
+            </a>
+            <a href="{{ url_for('attendance_report') }}">
+                <i class="fas fa-chart-bar"></i>
+                <span>Attendance Report</span>
+            </a>
+            <a href="{{ url_for('leave_report') }}">
+                <i class="fas fa-file-alt"></i>
+                <span>Leave Report</span>
+            </a>
+            <a href="{{ url_for('logout') }}" onclick="return confirmLogout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <h1>Employee Directory</h1>
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ session.full_name[0].upper() }}
+                </div>
+                <div class="user-details">
+                    <span class="name">{{ session.full_name }}</span>
+                    <span class="role">{{ session.role_name }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <div class="card">
+                <div class="card-header">
+                    <h3>All Employees</h3>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <input
+                            type="text"
+                            id="search-input"
+                            placeholder="Search employees..."
+                            onkeyup="searchTable('search-input', 'employee-table')"
+                            class="form-control"
+                            style="width: 300px;"
+                        >
+                        <a href="{{ url_for('add_employee') }}" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Add New Employee
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if employees %}
+                        <div class="table-container">
+                            <table id="employee-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Full Name</th>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Date Joined</th>
+                                        <th>Total Present</th>
+                                        <th>Approved Leaves</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for emp in employees %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            <strong>{{ emp.full_name }}</strong>
+                                        </td>
+                                        <td>{{ emp.username }}</td>
+                                        <td>{{ emp.email }}</td>
+                                        <td>{{ emp.date_joined }}</td>
+                                        <td>
+                                            <span class="badge badge-success">{{ emp.total_present }} days</span>
+                                        </td>
+                                        <td>{{ emp.approved_leaves }}</td>
+                                        <td>
+                                            {% if emp.is_active %}
+                                                <span class="badge badge-success">
+                                                    <i class="fas fa-check-circle"></i> Active
+                                                </span>
+                                            {% else %}
+                                                <span class="badge badge-danger">
+                                                    <i class="fas fa-times-circle"></i> Inactive
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if emp.is_active %}
+                                                <form method="POST" action="{{ url_for('delete_employee', employee_id=emp.user_id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to deactivate this employee?')">
+                                                    <button type="submit" class="btn btn-danger btn-sm">
+                                                        <i class="fas fa-user-times"></i> Deactivate
+                                                    </button>
+                                                </form>
+                                            {% else %}
+                                                <form method="POST" action="{{ url_for('activate_employee', employee_id=emp.user_id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to reactivate this employee?')">
+                                                    <button type="submit" class="btn btn-success btn-sm">
+                                                        <i class="fas fa-user-check"></i> Activate
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <h3>No Employees Found</h3>
+                            <p>No employee records available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+
+{% endblock %}

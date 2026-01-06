@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance History{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <h2>Employee Portal</h2>
+            <p>{{ session.full_name }}</p>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('employee_dashboard') }}">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('attendance_history') }}" class="active">
+                <i class="fas fa-calendar-check"></i>
+                <span>Attendance History</span>
+            </a>
+            <a href="{{ url_for('apply_leave') }}">
+                <i class="fas fa-file-alt"></i>
+                <span>Apply for Leave</span>
+            </a>
+            <a href="{{ url_for('leave_status') }}">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Leave Status</span>
+            </a>
+            <a href="{{ url_for('logout') }}" onclick="return confirmLogout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <h1>Attendance History</h1>
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ session.full_name[0].upper() }}
+                </div>
+                <div class="user-details">
+                    <span class="name">{{ session.full_name }}</span>
+                    <span class="role">{{ session.role_name }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <div class="card">
+                <div class="card-header">
+                    <h3>My Attendance Records</h3>
+                    <div class="d-flex gap-2">
+                        <select id="month-filter" class="form-control" onchange="filterByMonth()" style="width: 200px;">
+                            <option value="">Select Month</option>
+                            {% for i in range(1, 13) %}
+                                {% set month_value = '%d-%02d'|format(2024, i) %}
+                                <option value="{{ month_value }}" {% if selected_month == month_value %}selected{% endif %}>
+                                    {{ ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][i-1] }} 2024
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <button onclick="exportTableToCSV('attendance_history.csv')" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if attendance_records %}
+                        <div class="table-container">
+                            <table id="attendance-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Date</th>
+                                        <th>Day</th>
+                                        <th>Status</th>
+                                        <th>Marked At</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in attendance_records %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ record.date }}</td>
+                                        <td>{{ record.day }}</td>
+                                        <td>
+                                            {% if record.status == 'Present' %}
+                                            <span class="badge badge-success">
+                                                <i class="fas fa-check"></i> Present
+                                            </span>
+                                            {% elif record.status == 'Absent' %}
+                                            <span class="badge badge-danger">
+                                                <i class="fas fa-times"></i> Absent
+                                            </span>
+                                            {% else %}
+                                            <span class="badge badge-info">
+                                                {{ record.status }}
+                                            </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ record.marked_at }}</td>
+                                        <td>{{ record.remarks }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+
+                            </table>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem; padding: 1rem; background-color: var(--light-bg); border-radius: 8px;">
+                            <h4>Summary</h4>
+                            <p>
+                                <strong>Total Records:</strong> {{ attendance_records|length }} |
+                                <strong>Present:</strong> {{ attendance_records|selectattr('status', 'equalto', 'Present')|list|length }} |
+                                <strong>Absent:</strong> {{ attendance_records|selectattr('status', 'equalto', 'Absent')|list|length }} |
+                                <strong>Holidays:</strong> {{ attendance_records|selectattr('is_holiday', 'equalto', true)|list|length }}
+                            </p>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-times"></i>
+                            <h3>No Records Found</h3>
+                            <p>No attendance records for the selected month</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

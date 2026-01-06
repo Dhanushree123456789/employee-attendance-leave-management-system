@@ -1,0 +1,6 @@
+- [ ] Update get_holidays_for_month to use LIKE instead of strftime
+- [ ] Update attendance_history query to use LIKE instead of strftime
+- [ ] Update attendance_report query to use LIKE instead of strftime
+- [ ] Update leave_report query to use LIKE instead of strftime
+- [ ] Fix attendance_report.html template to remove extra td and add working_days and holiday_count in header
+- [ ] Test the application to ensure no errors

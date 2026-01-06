@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block body %}
+<div class="dashboard">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <h2>Admin Portal</h2>
+            <p>{{ session.full_name }}</p>
+        </div>
+        
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('admin_dashboard') }}" class="active">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('view_employees') }}">
+                <i class="fas fa-users"></i>
+                <span>Employees</span>
+            </a>
+            <a href="{{ url_for('view_attendance') }}">
+                <i class="fas fa-calendar-check"></i>
+                <span>View Attendance</span>
+            </a>
+            <a href="{{ url_for('manage_leaves') }}">
+                <i class="fas fa-tasks"></i>
+                <span>Manage Leaves</span>
+            </a>
+            <a href="{{ url_for('attendance_report') }}">
+                <i class="fas fa-chart-bar"></i>
+                <span>Attendance Report</span>
+            </a>
+            <a href="{{ url_for('leave_report') }}">
+                <i class="fas fa-file-alt"></i>
+                <span>Leave Report</span>
+            </a>
+            <a href="{{ url_for('logout') }}" onclick="return confirmLogout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Navigation -->
+        <div class="top-nav">
+            <h1>Admin Dashboard</h1>
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ session.full_name[0].upper() }}
+                </div>
+                <div class="user-details">
+                    <span class="name">{{ session.full_name }}</span>
+                    <span class="role">{{ session.role_name }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} fade-in">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card primary">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-label">Total Employees</div>
+                    <div class="stat-value">{{ total_employees }}</div>
+                </div>
+                
+                <div class="stat-card success">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-label">Present Today</div>
+                    <div class="stat-value">{{ present_count }}</div>
+                </div>
+                
+                <div class="stat-card danger">
+                    <div class="stat-icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-label">Absent Today</div>
+                    <div class="stat-value">{{ absent_count }}</div>
+                </div>
+                
+                <div class="stat-card warning">
+                    <div class="stat-icon">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-label">Not Marked</div>
+                    <div class="stat-value">{{ not_marked }}</div>
+                </div>
+            </div>
+            
+            <!-- Pending Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Pending Leave Requests</h3>
+                    <span class="badge badge-warning">{{ pending_leaves }} Pending</span>
+                </div>
+                <div class="card-body">
+                    {% if recent_requests %}
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Leave Type</th>
+                                        <th>Duration</th>
+                                        <th>Applied On</th>
+                                        <th>Reason</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for leave in recent_requests %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ leave.full_name }}</strong><br>
+                                            <small style="color: var(--text-light);">{{ leave.email }}</small>
+                                        </td>
+                                        <td>{{ leave.leave_type }}</td>
+                                        <td>
+                                            {{ leave.start_date }} to {{ leave.end_date }}
+                                        </td>
+                                        <td>{{ leave.applied_at[:10] }}</td>
+                                        <td>{{ leave.reason[:50] }}{% if leave.reason|length > 50 %}...{% endif %}</td>
+                                        <td>
+                                            {% if leave.status == 'Pending' %}
+                                                <span class="badge badge-warning">
+                                                    <i class="fas fa-hourglass-half"></i> Pending
+                                                </span>
+                                            {% elif leave.status == 'Approved' %}
+                                                <span class="badge badge-success">
+                                                    <i class="fas fa-check-circle"></i> Approved
+                                                </span>
+                                            {% else %}
+                                                <span class="badge badge-danger">
+                                                    <i class="fas fa-times-circle"></i> Rejected
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if leave.status == 'Pending' %}
+                                                <button onclick="processLeaveRequest({{ leave.leave_id }}, 'Approved')"
+                                                        class="btn btn-success btn-sm">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button onclick="processLeaveRequest({{ leave.leave_id }}, 'Rejected')"
+                                                        class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="margin-top: 1rem; text-align: center;">
+                            <a href="{{ url_for('manage_leaves') }}" class="btn btn-secondary">
+                                View All Leave Requests
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-check-double"></i>
+                            <h3>All Clear!</h3>
+                            <p>No pending leave requests at the moment</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Today's Break Times -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Today's Break Times</h3>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <span class="badge badge-info">{{ employees_on_break }} On Break</span>
+                        <span class="badge badge-secondary">{{ total_break_minutes_today }} Total Minutes</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if today_breaks %}
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Break Start</th>
+                                        <th>Break End</th>
+                                        <th>Duration (minutes)</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for break_record in today_breaks %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ break_record.full_name }}</strong>
+                                        </td>
+                                        <td>{{ break_record.break_in_time[:19] if break_record.break_in_time else '-' }}</td>
+                                        <td>{{ break_record.break_out_time[:19] if break_record.break_out_time else '-' }}</td>
+                                        <td>{{ break_record.break_duration if break_record.break_duration else '-' }}</td>
+                                        <td>
+                                            {% if break_record.break_out_time %}
+                                                <span class="badge badge-success">
+                                                    <i class="fas fa-check"></i> Completed
+                                                </span>
+                                            {% else %}
+                                                <span class="badge badge-warning">
+                                                    <i class="fas fa-clock"></i> Ongoing
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-coffee"></i>
+                            <h3>No Breaks Today</h3>
+                            <p>No break records have been logged yet today</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                <a href="{{ url_for('add_employee') }}" class="card" style="text-decoration: none; border: 2px solid var(--info-color); cursor: pointer;">
+                    <div class="card-body" style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-user-plus" style="font-size: 3rem; color: var(--info-color); margin-bottom: 1rem;"></i>
+                        <h3 style="color: var(--text-dark);">Add New Employee</h3>
+                        <p style="color: var(--text-light);">Register a new employee account</p>
+                    </div>
+                </a>
+
+                <a href="{{ url_for('view_attendance') }}" class="card" style="text-decoration: none; border: 2px solid var(--primary-color); cursor: pointer;">
+                    <div class="card-body" style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-calendar-check" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;"></i>
+                        <h3 style="color: var(--text-dark);">View Today's Attendance</h3>
+                        <p style="color: var(--text-light);">Check who's present and absent</p>
+                    </div>
+                </a>
+
+                <a href="{{ url_for('attendance_report') }}" class="card" style="text-decoration: none; border: 2px solid var(--success-color); cursor: pointer;">
+                    <div class="card-body" style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-chart-line" style="font-size: 3rem; color: var(--success-color); margin-bottom: 1rem;"></i>
+                        <h3 style="color: var(--text-dark);">Generate Reports</h3>
+                        <p style="color: var(--text-light);">Create attendance and leave reports</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
